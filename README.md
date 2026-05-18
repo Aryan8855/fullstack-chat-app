@@ -15,7 +15,9 @@ Highlights:
 - ⭐ At the end Deployment like a pro for FREE!
 - ⏳ And much more!
 
-### Setup .env file
+### Setup .env file 
+## ci cd test
+## testing phase 
 
 ```js
 MONGODB_URI=...

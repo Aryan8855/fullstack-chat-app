@@ -1,0 +1,60 @@
+name: Chat App CI/CD
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  build-and-push:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # CHECKOUT PROJECT
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # CONFIGURE AWS
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # LOGIN TO AWS ECR
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # BUILD FRONTEND IMAGE
+      - name: Build Frontend Docker Image
+        run: |
+          docker build -t frontend-img ./frontend
+
+      # TAG FRONTEND IMAGE
+      - name: Tag Frontend Docker Image
+        run: |
+          docker tag frontend-img:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-img:latest
+
+      # PUSH FRONTEND IMAGE
+      - name: Push Frontend Docker Image
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-img:latest
+
+      # BUILD BACKEND IMAGE
+      - name: Build Backend Docker Image
+        run: |
+          docker build -t backend-img ./backend
+
+      # TAG BACKEND IMAGE
+      - name: Tag Backend Docker Image
+        run: |
+          docker tag backend-img:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-img:latest
+
+      # PUSH BACKEND IMAGE
+      - name: Push Backend Docker Image
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-img:latest

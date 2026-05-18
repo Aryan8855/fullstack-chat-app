@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+
+  frontend:
+    image: frontend-img
+    container_name: chatsphere-frontend
+
+    ports:
+      - "5173:80"
+
+    depends_on:
+      - backend
+
+    restart: always
+
+
+
+  backend:
+    image: backend-img
+    container_name: chatsphere-backend
+
+    ports:
+      - "5001:5001"
+
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/chatsphere
+      - REDIS_HOST=redis
+
+    depends_on:
+      - mongo
+      - redis
+
+    restart: always
+
+
+
+  mongo:
+    image: mongo-img
+    container_name: chatsphere-mongo
+
+    ports:
+      - "27017:27017"
+
+    volumes:
+      - mongo_data:/data/db
+
+    restart: always
+
+
+
+  redis:
+    image: redis:7
+    container_name: chatsphere-redis
+
+    ports:
+      - "6379:6379"
+
+    restart: always
+
+
+
+volumes:
+  mongo_data:

@@ -1,12 +1,42 @@
 import express from "express";
+
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { getMessages, getUsersForSidebar, sendMessage } from "../controllers/message.controller.js";
+
+import {
+  getMessages,
+  getUsersForSidebar,
+  sendMessage,
+  clearChat,
+} from "../controllers/message.controller.js";
 
 const router = express.Router();
 
-router.get("/users", protectRoute, getUsersForSidebar);
-router.get("/:id", protectRoute, getMessages);
+// GET USERS
+router.get(
+  "/users",
+  protectRoute,
+  getUsersForSidebar
+);
 
-router.post("/send/:id", protectRoute, sendMessage);
+// GET MESSAGES
+router.get(
+  "/:id",
+  protectRoute,
+  getMessages
+);
+
+// SEND MESSAGE
+router.post(
+  "/send/:id",
+  protectRoute,
+  sendMessage
+);
+
+// CLEAR CHAT
+router.delete(
+  "/clear/:id",
+  protectRoute,
+  clearChat
+);
 
 export default router;
