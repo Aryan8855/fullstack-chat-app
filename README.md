@@ -18,6 +18,7 @@ Highlights:
 ### Setup .env file 
 ## ci cd test
 ## testing phase 
+## path fixed now
 
 ```js
 MONGODB_URI=...
