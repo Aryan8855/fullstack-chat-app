@@ -1,60 +1,76 @@
 name: Chat App CI/CD
 
 on:
-  push:
-    branches:
-      - master
+push:
+branches:
+- master
 
 jobs:
+build-push-deploy:
+runs-on: ubuntu-latest
 
-  build-and-push:
+```
+steps:
 
-    runs-on: ubuntu-latest
+  - name: Checkout Code
+    uses: actions/checkout@v4
 
-    steps:
+  - name: Configure AWS Credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      aws-region: ${{ secrets.AWS_REGION }}
 
-      # CHECKOUT PROJECT
-      - name: Checkout Code
-        uses: actions/checkout@v4
+  - name: Login to Amazon ECR
+    uses: aws-actions/amazon-ecr-login@v2
 
-      # CONFIGURE AWS
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+  # FRONTEND
 
-      # LOGIN TO AWS ECR
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+  - name: Build Frontend Image
+    run: |
+      docker build -t chatapp-frontend ./frontend
 
-      # BUILD FRONTEND IMAGE
-      - name: Build Frontend Docker Image
-        run: |
-          docker build -t frontend-img ./frontend
+  - name: Tag Frontend Image
+    run: |
+      docker tag chatapp-frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-frontend:latest
 
-      # TAG FRONTEND IMAGE
-      - name: Tag Frontend Docker Image
-        run: |
-          docker tag frontend-img:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-img:latest
+  - name: Push Frontend Image
+    run: |
+      docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-frontend:latest
 
-      # PUSH FRONTEND IMAGE
-      - name: Push Frontend Docker Image
-        run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-img:latest
+  # BACKEND
 
-      # BUILD BACKEND IMAGE
-      - name: Build Backend Docker Image
-        run: |
-          docker build -t backend-img ./backend
+  - name: Build Backend Image
+    run: |
+      docker build -t chatapp-backend ./backend
 
-      # TAG BACKEND IMAGE
-      - name: Tag Backend Docker Image
-        run: |
-          docker tag backend-img:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-img:latest
+  - name: Tag Backend Image
+    run: |
+      docker tag chatapp-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-backend:latest
 
-      # PUSH BACKEND IMAGE
-      - name: Push Backend Docker Image
-        run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-img:latest
+  - name: Push Backend Image
+    run: |
+      docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-backend:latest
+
+  # CONNECT TO EKS
+
+  - name: Update Kubeconfig
+    run: |
+      aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name chatapp-prod
+
+  # ROLLING UPDATE
+
+  - name: Restart Backend Deployment
+    run: |
+      kubectl rollout restart deployment/backend
+
+  - name: Restart Frontend Deployment
+    run: |
+      kubectl rollout restart deployment/frontend
+
+  - name: Wait For Rollout
+    run: |
+      kubectl rollout status deployment/backend
+      kubectl rollout status deployment/frontend
+```
