@@ -18,17 +18,13 @@ spec:
 
     spec:
       containers:
-      - name: backend
+        - name: backend
+          image: 757905896588.dkr.ecr.ap-south-1.amazonaws.com/chatapp-backend:latest
+          imagePullPolicy: Always
 
-        image: 757905896588.dkr.ecr.ap-south-1.amazonaws.com/chatapp-backend:v1
+          ports:
+            - containerPort: 5001
 
-        imagePullPolicy: Always
-
-        ports:
-        - containerPort: 5001
-
-        env:
-        - name: PORT
-          value: "5001"
-
-        # Add your Mongo URI and JWT secret later
+          env:
+            - name: PORT
+              value: "5001"
