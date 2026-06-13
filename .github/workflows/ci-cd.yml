@@ -1,68 +1,58 @@
-
-GitHub Actions cannot parse that.
-
-Use this exact file:
-
-:::writing{variant="document" id="41852"}
 name: Chat App CI/CD
 
 on:
-  push:
-    branches:
-      - master
+push:
+branches:
+- master
 
 jobs:
-  build-push-deploy:
-    runs-on: ubuntu-latest
+build-push-deploy:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+steps:
+  - name: Checkout Code
+    uses: actions/checkout@v4
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+  - name: Configure AWS Credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Build Frontend Image
-        run: docker build -t chatapp-frontend ./frontend
+  - name: Login to Amazon ECR
+    uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Tag Frontend Image
-        run: docker tag chatapp-frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-frontend:latest
+  - name: Build Frontend Image
+    run: docker build -t chatapp-frontend ./frontend
 
-      - name: Push Frontend Image
-        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-frontend:latest
+  - name: Tag Frontend Image
+    run: docker tag chatapp-frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-frontend:latest
 
-      - name: Build Backend Image
-        run: docker build -t chatapp-backend ./backend
+  - name: Push Frontend Image
+    run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-frontend:latest
 
-      - name: Tag Backend Image
-        run: docker tag chatapp-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-backend:latest
+  - name: Build Backend Image
+    run: docker build -t chatapp-backend ./backend
 
-      - name: Push Backend Image
-        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-backend:latest
+  - name: Tag Backend Image
+    run: docker tag chatapp-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-backend:latest
 
-      - name: Update Kubeconfig
-        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name chatapp-prod
+  - name: Push Backend Image
+    run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatapp-backend:latest
 
-      - name: Restart Backend Deployment
-        run: kubectl rollout restart deployment/backend
+  - name: Update Kubeconfig
+    run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name chatapp-prod
 
-      - name: Restart Frontend Deployment
-        run: kubectl rollout restart deployment/frontend
+  - name: Restart Backend Deployment
+    run: kubectl rollout restart deployment/backend
 
-      - name: Wait For Rollout
-        run: |
-          kubectl rollout status deployment/backend
-          kubectl rollout status deployment/frontend
-:::
+  - name: Restart Frontend Deployment
+    run: kubectl rollout restart deployment/frontend
 
-Save it as:
+  - name: Wait For Rollout
+    run: |
+      kubectl rollout status deployment/backend
+      kubectl rollout status deployment/frontend
 
-```text
-.github/workflows/ci-cd.yml
